@@ -138,37 +138,53 @@ export default {
       tickers: [],
       sel: null,
       graph: [],
+      interval: null,
     };
   },
 
+  created() {
+    const tickersData = localStorage.getItem("cryptonomicon-list");
+
+    if (tickersData) {
+      this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach((el) => {
+        this.getData(el.name);
+      });
+    }
+  },
   methods: {
     select(ticker) {
       this.sel = ticker;
       this.graph = [];
     },
-    addCrypto() {
-      const newTickerItem = {
-        name: this.ticker,
-        price: "-",
-      };
-
-      this.tickers.push(newTickerItem);
-
+    getData(tickerName) {
       setInterval(async () => {
         const fetchData = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${newTickerItem.name}&tsyms=USD&api_key=ba2747783ae593be993e889b444039d62e3858deb26bbca83d1d19cad6fb4250`
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=ba2747783ae593be993e889b444039d62e3858deb26bbca83d1d19cad6fb4250`
         );
         const data = await fetchData.json();
-        this.tickers.find((el) => el.name === newTickerItem.name).price =
-          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+        this.tickers.forEach((el) => {
+          if (el.name === tickerName)
+            el.price =
+              data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+        });
 
-        if (this.sel?.name === newTickerItem.name) {
+        if (this.sel?.name === tickerName) {
           this.graph.push(data.USD);
           console.log(this.graph);
         }
-      }, 5000);
-
+      }, 1000);
       this.ticker = "";
+    },
+    addCrypto() {
+      const newTickerItem = {
+        name: this.ticker.toUpperCase(),
+        price: "-",
+      };
+      this.tickers.push(newTickerItem);
+
+      localStorage.setItem("cryptonomicon-list", JSON.stringify(this.tickers));
+      this.getData(newTickerItem.name);
     },
 
     deleteCrypto(tickerToRemove) {
